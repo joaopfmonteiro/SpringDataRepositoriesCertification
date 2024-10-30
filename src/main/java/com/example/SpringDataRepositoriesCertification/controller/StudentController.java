@@ -1,8 +1,10 @@
 package com.example.SpringDataRepositoriesCertification.controller;
 
 import com.example.SpringDataRepositoriesCertification.core.Student;
+import com.example.SpringDataRepositoriesCertification.exception.MyException;
 import com.example.SpringDataRepositoriesCertification.repository.StudentRepository;
 import com.example.SpringDataRepositoriesCertification.service.StudentService;
+import jakarta.transaction.Transactional;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -44,8 +46,17 @@ public class StudentController {
     }
 
     @PostMapping
-    public ResponseEntity<String> add(@RequestBody Student student){
+    @Transactional(rollbackOn = MyException.class)
+    public ResponseEntity<String> add(@RequestBody Student student) throws MyException{
         studentRepository.save(student);
+        if(student.getFess() > 200.00){
+            throw new MyException("Blow up");
+        }
         return ResponseEntity.accepted().header("location", "/student/" + student.getId()).build();
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Object> handle(Exception exception) {
+        return ResponseEntity.badRequest().build();
     }
 }
